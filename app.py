@@ -106,38 +106,34 @@ elif menu == "View Medicines":
 
     st.header("Inventory")
 
-    df = pd.read_sql_query(
-        "SELECT * FROM medicines",
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM medicines", conn)
 
-    # Keep header row (Streamlit table)
-    st.dataframe(df, use_container_width=True)
+    if len(df) == 0:
+        st.info("No medicines found")
+    else:
 
-    st.markdown("### Manage Medicines")
+        for i, row in df.iterrows():
 
-    for i, row in df.iterrows():
+            col1, col2, col3, col4, col5, col6 = st.columns([1, 3, 2, 2, 2, 3])
 
-        col1, col2, col3, col4, col5 = st.columns([1, 3, 2, 2, 3])
+            with col1:
+                st.write(row["id"])
 
-        with col1:
-            st.write(row["id"])
+            with col2:
+                st.write(row["name"])
 
-        with col2:
-            st.write(row["name"])
+            with col3:
+                st.write(row["quantity"])
 
-        with col3:
-            st.write(row["quantity"])
+            with col4:
+                st.write(row["price"])
 
-        with col4:
-            st.write(row["price"])
+            with col5:
+                st.write(row["expiry_date"])
 
-        with col5:
+            with col6:
 
-            btn1, btn2 = st.columns(2)
-
-            # EDIT BUTTON
-            with btn1:
+                # EDIT BUTTON
                 if st.button("✏️ Edit", key=f"edit_{row['id']}"):
 
                     st.session_state["edit_id"] = row["id"]
@@ -146,16 +142,15 @@ elif menu == "View Medicines":
                     st.session_state["edit_price"] = row["price"]
                     st.session_state["edit_expiry"] = row["expiry_date"]
 
-            # DELETE BUTTON
-            with btn2:
-                if st.button("🗑 Delete", key=f"delete_{row['id']}"):
+                # DELETE BUTTON
+                if st.button("🗑️ Delete", key=f"del_{row['id']}"):
 
                     cursor.execute(
                         "DELETE FROM medicines WHERE id=?",
                         (row["id"],)
                     )
                     conn.commit()
-                    st.success(f"{row['name']} deleted successfully")
+                    st.success("Medicine deleted successfully!")
                     st.rerun()
 elif menu == "Search Medicine":
 
