@@ -190,8 +190,6 @@ elif menu == "Search Medicine":
         )
 
         st.dataframe(df)
-
-        st.dataframe(df)
 elif menu == "AI Billing":
 
     st.header("💊 AI Billing System")
