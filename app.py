@@ -184,7 +184,7 @@ elif menu == "Search Medicine":
         SELECT * FROM medicines
         WHERE name LIKE '%{search}%'
         """
-       df = pd.read_sql_query(
+        df = pd.read_sql_query(
             query,
             conn
         )
