@@ -9,12 +9,13 @@ cursor = conn.cursor()
 
 # Create Table
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS medicines(
+CREATE TABLE IF NOT EXISTS sales(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
+    medicine_name TEXT,
     quantity INTEGER,
     price REAL,
-    expiry_date TEXT
+    total REAL,
+    sale_date TEXT
 )
 """)
 conn.commit()
@@ -22,14 +23,15 @@ conn.commit()
 st.set_page_config(page_title="Pharmacy Management System")
 
 st.title("💊 Pharmacy Management System")
-
 menu = st.sidebar.selectbox(
     "Select Menu",
     [
         "Dashboard",
         "Add Medicine",
         "View Medicines",
-        "Search Medicine"
+        "Search Medicine",
+        "AI Billing",
+        "Daily Sales Report"
     ]
 )
 
@@ -201,3 +203,79 @@ elif menu == "Search Medicine":
         )
 
         st.dataframe(df)
+elif menu == "AI Billing":
+
+    st.header("💊 AI Billing System")
+
+    medicines = pd.read_sql_query("SELECT * FROM medicines", conn)
+
+    if len(medicines) == 0:
+        st.warning("No medicines available")
+    else:
+
+        med_name = st.selectbox("Select Medicine", medicines["name"])
+
+        qty = st.number_input("Quantity", min_value=1, value=1)
+
+        selected = medicines[medicines["name"] == med_name].iloc[0]
+
+        price = selected["price"]
+
+        total = qty * price
+
+        st.write("Price per unit:", price)
+        st.write("Total Bill:", total)
+
+        # AI suggestion (simple logic)
+        if qty > selected["quantity"]:
+            st.error("⚠ Not enough stock!")
+        else:
+            st.success("Stock available")
+
+        if st.button("Generate Bill"):
+
+            cursor.execute("""
+                INSERT INTO sales
+                (medicine_name, quantity, price, total, sale_date)
+                VALUES (?, ?, ?, ?, date('now'))
+            """, (med_name, qty, price, total))
+
+            conn.commit()
+
+            # reduce stock
+            cursor.execute("""
+                UPDATE medicines
+                SET quantity = quantity - ?
+                WHERE name = ?
+            """, (qty, med_name))
+
+            conn.commit()
+
+            st.success("Bill Generated Successfully ✅")
+elif menu == "Daily Sales Report":
+
+    st.header("📊 Daily Sales Report (AI Analytics)")
+
+    sales = pd.read_sql_query("SELECT * FROM sales", conn)
+
+    if len(sales) == 0:
+        st.warning("No sales data available")
+    else:
+
+        st.dataframe(sales)
+
+        total_sales = sales["total"].sum()
+
+        st.metric("Total Revenue Today", total_sales)
+
+        # Group by medicine
+        report = sales.groupby("medicine_name")["total"].sum()
+
+        st.subheader("Top Selling Medicines")
+
+        st.bar_chart(report)
+
+        # AI insight
+        top_medicine = report.idxmax()
+
+        st.success(f"AI Insight: {top_medicine} is the highest selling medicine today")
