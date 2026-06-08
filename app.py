@@ -111,7 +111,35 @@ elif menu == "View Medicines":
         conn
     )
 
-    st.dataframe(df)
+    if len(df) > 0:
+
+        for index, row in df.iterrows():
+
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+            col1.write(row["id"])
+            col2.write(row["name"])
+            col3.write(row["quantity"])
+            col4.write(row["price"])
+            col5.write(row["expiry_date"])
+
+            if col6.button(
+                "Delete",
+                key=f"delete_{row['id']}"
+            ):
+
+                cursor.execute(
+                    "DELETE FROM medicines WHERE id=?",
+                    (row["id"],)
+                )
+
+                conn.commit()
+
+                st.success(
+                    f"{row['name']} deleted successfully"
+                )
+
+                st.rerun()
 
 elif menu == "Search Medicine":
 
