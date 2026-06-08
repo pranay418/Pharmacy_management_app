@@ -2,6 +2,21 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+def ai_place_medicine(name):
+
+    name = name.lower()
+
+    if any(x in name for x in ["paracetamol", "crocin", "dolo", "fever", "pain"]):
+        return "Shelf A - Drawer 1 (Fever/Pain)"
+
+    elif any(x in name for x in ["cetirizine", "allergy", "cold", "sinus"]):
+        return "Shelf B - Drawer 2 (Cold/Allergy)"
+
+    elif any(x in name for x in ["amoxicillin", "azithromycin", "antibiotic"]):
+        return "Shelf C - Drawer 3 (Antibiotics)"
+
+    else:
+        return "Shelf D - Drawer 4 (General)"
 
 # Database Connection
 conn = sqlite3.connect("pharmacy.db", check_same_thread=False)
@@ -9,17 +24,16 @@ cursor = conn.cursor()
 
 # Create Table
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS sales(
+CREATE TABLE IF NOT EXISTS medicines(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    medicine_name TEXT,
+    name TEXT,
     quantity INTEGER,
     price REAL,
-    total REAL,
-    sale_date TEXT
+    expiry_date TEXT,
+    location TEXT
 )
 """)
 conn.commit()
-
 st.set_page_config(page_title="Pharmacy Management System")
 
 st.title("💊 Pharmacy Management System")
@@ -86,18 +100,12 @@ elif menu == "Add Medicine":
 
     if st.button("Add Medicine"):
 
-        cursor.execute(
-            """
-            INSERT INTO medicines
-            (name, quantity, price, expiry_date)
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                name,
-                quantity,
-                price,
-                str(expiry)
-            )
+       location = ai_place(name)
+
+       cursor.execute("""
+       INSERT INTO medicines(name, quantity, price, expiry_date, location)
+       VALUES (?, ?, ?, ?, ?)
+       """, (name, quantity, price, str(expiry), location))
         )
 
         conn.commit()
@@ -196,11 +204,8 @@ elif menu == "Search Medicine":
         SELECT * FROM medicines
         WHERE name LIKE '%{search}%'
         """
-
-        df = pd.read_sql_query(
-            query,
-            conn
-        )
+        df = pd.read_sql_query("SELECT * FROM medicines", conn)
+        st.dataframe(df)
 
         st.dataframe(df)
 elif menu == "AI Billing":
@@ -279,3 +284,21 @@ elif menu == "Daily Sales Report":
         top_medicine = report.idxmax()
 
         st.success(f"AI Insight: {top_medicine} is the highest selling medicine today")
+st.sidebar.markdown("## 🧠 AI Medicine Locator")
+
+search_med = st.sidebar.text_input("Enter Medicine Name")
+
+if search_med:
+
+    query = f"""
+    SELECT * FROM medicines
+    WHERE name LIKE '%{search_med}%'
+    """
+
+    df = pd.read_sql_query(query, conn)
+
+    if len(df) > 0:
+        st.sidebar.success("Medicine Found")
+        st.sidebar.write(df[["name", "location"]])
+    else:
+        st.sidebar.error("Not Found")
