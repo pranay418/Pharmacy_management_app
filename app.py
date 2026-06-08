@@ -106,7 +106,6 @@ elif menu == "Add Medicine":
        INSERT INTO medicines(name, quantity, price, expiry_date, location)
        VALUES (?, ?, ?, ?, ?)
        """, (name, quantity, price, str(expiry), location))
-
         st.success("Medicine Added Successfully")
 
 elif menu == "View Medicines":
