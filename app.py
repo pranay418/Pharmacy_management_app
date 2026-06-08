@@ -106,7 +106,7 @@ elif menu == "Add Medicine":
        INSERT INTO medicines(name, quantity, price, expiry_date, location)
        VALUES (?, ?, ?, ?, ?)
        """, (name, quantity, price, str(expiry), location))
-        )
+        
 
         conn.commit()
 
