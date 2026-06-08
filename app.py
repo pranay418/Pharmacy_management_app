@@ -106,39 +106,42 @@ elif menu == "View Medicines":
 
     st.header("Inventory")
 
-    df = pd.read_sql_query(
-        "SELECT * FROM medicines",
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM medicines", conn)
 
-    if len(df) > 0:
+    if len(df) == 0:
+        st.info("No medicines found")
+    else:
 
-        for index, row in df.iterrows():
+        # TABLE HEADER (IMPORTANT - keeps heading row)
+        header_cols = st.columns([1, 3, 2, 2, 2, 3])
+        header_cols[0].write("ID")
+        header_cols[1].write("Name")
+        header_cols[2].write("Quantity")
+        header_cols[3].write("Price")
+        header_cols[4].write("Expiry")
+        header_cols[5].write("Actions")
 
-            col1, col2, col3, col4, col5, col6 = st.columns(6)
+        # TABLE ROWS
+        for i, row in df.iterrows():
 
-            col1.write(row["id"])
-            col2.write(row["name"])
-            col3.write(row["quantity"])
-            col4.write(row["price"])
-            col5.write(row["expiry_date"])
+            cols = st.columns([1, 3, 2, 2, 2, 3])
 
-            if col6.button(
-                "Delete",
-                key=f"delete_{row['id']}"
-            ):
+            cols[0].write(row["id"])
+            cols[1].write(row["name"])
+            cols[2].write(row["quantity"])
+            cols[3].write(row["price"])
+            cols[4].write(row["expiry_date"])
+
+            # DELETE BUTTON
+            if cols[5].button("🗑 Delete", key=f"del_{row['id']}"):
 
                 cursor.execute(
                     "DELETE FROM medicines WHERE id=?",
                     (row["id"],)
                 )
-
                 conn.commit()
 
-                st.success(
-                    f"{row['name']} deleted successfully"
-                )
-
+                st.success(f"{row['name']} deleted successfully")
                 st.rerun()
 
 elif menu == "Search Medicine":
